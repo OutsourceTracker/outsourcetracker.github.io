@@ -4,10 +4,12 @@ let markers = [];
 let mapOverlays = [];
 let currentInfoWindow = null;
 let allMasterLocations = [];
+let activeLocationPath = null;
+let pendingDeepLink = null;
 const loadedDetails = new Map();
 const MAP_ID = '91655a72ee45e0e184bfe567';
 
-async function loadMasterList() {
+async function loadMasterListData() {
   try {
     const res = await fetch('masterlist.json');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -16,12 +18,12 @@ async function loadMasterList() {
 
     populateCategoryFilter();
     filterLocations();
-    initMap();
-    Theme.init();
+    return true;
   } catch (e) {
     console.error('Failed to load masterlist.json', e);
     document.getElementById('location-list').innerHTML =
       '<li style="cursor:default;color:#ef4444;">Failed to load locations. Serve this folder over HTTP (not file://).</li>';
+    return false;
   }
 }
 
@@ -97,15 +99,22 @@ function buildNavigationUrl(target) {
 
 function populateCategoryFilter() {
   const select = document.getElementById('filter-category');
-  const currentValue = select.value;
-  const categories = [...new Set(allMasterLocations.map((loc) => loc.category).filter(Boolean))].sort();
+  if (!select) return;
 
-  select.innerHTML = '<option value="">All Categories</option>';
+  const currentValue = select.value;
+  const categories = [
+    ...new Set(
+      allMasterLocations
+        .map((loc) => (typeof loc.category === 'string' ? loc.category.trim() : ''))
+        .filter(Boolean)
+    )
+  ].sort();
+
+  select.replaceChildren();
+  select.appendChild(new Option('All Categories', ''));
+
   categories.forEach((category) => {
-    const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category;
-    select.appendChild(option);
+    select.appendChild(new Option(category, category));
   });
 
   if (currentValue && categories.includes(currentValue)) {
@@ -122,6 +131,99 @@ function getFilteredLocations() {
     if (term && !locationMatchesSearch(loc, term)) return false;
     return true;
   });
+}
+
+function getLocationFromUrl() {
+  const filePath = new URLSearchParams(window.location.search).get('loc');
+  if (!filePath) return null;
+  return allMasterLocations.find((loc) => loc.filePath === filePath) || null;
+}
+
+function getLocationShareUrl(loc) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('loc', loc.filePath);
+  url.hash = '';
+  return url.toString();
+}
+
+function setLocationInUrl(loc) {
+  const url = new URL(window.location.href);
+  if (loc) {
+    url.searchParams.set('loc', loc.filePath);
+  } else {
+    url.searchParams.delete('loc');
+  }
+  history.replaceState({ loc: loc?.filePath || null }, '', url);
+}
+
+async function openLocation(loc, { updateUrl = true } = {}) {
+  if (!loc) return false;
+
+  activeLocationPath = loc.filePath;
+  if (updateUrl) setLocationInUrl(loc);
+
+  const details = await loadLocationDetails(loc.filePath);
+  if (!details) return false;
+
+  if (!map || !AdvancedMarkerElement) {
+    pendingDeepLink = loc;
+    filterLocations();
+    return false;
+  }
+
+  showLocationOnMap({ ...loc, ...details });
+  filterLocations();
+
+  const activeItem = document.querySelector('#location-list li.active');
+  activeItem?.scrollIntoView({ block: 'nearest' });
+  return true;
+}
+
+async function tryOpenPendingDeepLink() {
+  const loc = pendingDeepLink || getLocationFromUrl();
+  if (!loc || !map || !AdvancedMarkerElement) return;
+
+  pendingDeepLink = null;
+  await openLocation(loc, { updateUrl: false });
+}
+
+function showShareFeedback(button) {
+  const originalLabel = button.getAttribute('aria-label');
+  button.setAttribute('aria-label', 'Link copied!');
+  button.classList.add('share-btn-copied');
+  setTimeout(() => {
+    button.setAttribute('aria-label', originalLabel);
+    button.classList.remove('share-btn-copied');
+  }, 2000);
+}
+
+async function handleShareClick(event, loc) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const shareUrl = getLocationShareUrl(loc);
+  const shareData = {
+    title: loc.name,
+    text: `${loc.name} — ${loc.city}, ${loc.state}`,
+    url: shareUrl
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showShareFeedback(event.currentTarget);
+  } catch (error) {
+    console.error('Failed to copy share link', error);
+    window.prompt('Copy this link:', shareUrl);
+  }
 }
 
 async function handleNavigateClick(event, loc) {
@@ -150,6 +252,10 @@ function renderLocationList(locations) {
 
   locations.forEach((loc) => {
     const li = document.createElement('li');
+    if (loc.filePath === activeLocationPath) {
+      li.classList.add('active');
+    }
+
     li.innerHTML = `
       <div class="location-item">
         <div class="location-info">
@@ -157,26 +263,26 @@ function renderLocationList(locations) {
           <small>${loc.city}, ${loc.state} &bull; ${loc.category}</small>
           ${loc.address ? `<br><small>${loc.address}</small>` : ''}
         </div>
-        <button type="button" class="nav-btn" aria-label="Navigate to location">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-          </svg>
-        </button>
+        <div class="location-actions">
+          <button type="button" class="icon-btn share-btn" aria-label="Share location">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"></path>
+              <path d="M12 16V4"></path>
+              <path d="m8 8 4-4 4 4"></path>
+            </svg>
+          </button>
+          <button type="button" class="icon-btn nav-btn" aria-label="Navigate to location">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+            </svg>
+          </button>
+        </div>
       </div>
     `;
 
-    const navBtn = li.querySelector('.nav-btn');
-    navBtn.onclick = (event) => handleNavigateClick(event, loc);
-
-    li.onclick = async () => {
-      document.querySelectorAll('#location-list li').forEach((l) => l.classList.remove('active'));
-      li.classList.add('active');
-
-      const details = await loadLocationDetails(loc.filePath);
-      if (details) {
-        showLocationOnMap({ ...loc, ...details });
-      }
-    };
+    li.querySelector('.share-btn').onclick = (event) => handleShareClick(event, loc);
+    li.querySelector('.nav-btn').onclick = (event) => handleNavigateClick(event, loc);
+    li.onclick = () => openLocation(loc);
     ul.appendChild(li);
   });
 }
@@ -423,7 +529,47 @@ function addPointMarker(pt, title, type, body = '') {
 async function initApp() {
   const { AdvancedMarkerElement: MarkerClass } = await google.maps.importLibrary('marker');
   AdvancedMarkerElement = MarkerClass;
-  await loadMasterList();
+
+  if (!allMasterLocations.length) {
+    await loadMasterListData();
+  }
+
+  if (!map) {
+    initMap();
+  }
+
+  await tryOpenPendingDeepLink();
+}
+
+async function bootstrapApp() {
+  Theme.init();
+  const loaded = await loadMasterListData();
+  if (!loaded) return;
+
+  const urlLocation = getLocationFromUrl();
+  if (urlLocation) {
+    pendingDeepLink = urlLocation;
+    activeLocationPath = urlLocation.filePath;
+    filterLocations();
+  }
+}
+
+window.addEventListener('popstate', () => {
+  const urlLocation = getLocationFromUrl();
+  if (urlLocation) {
+    openLocation(urlLocation, { updateUrl: false });
+    return;
+  }
+
+  activeLocationPath = null;
+  clearMapGraphics();
+  filterLocations();
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrapApp);
+} else {
+  bootstrapApp();
 }
 
 window.initApp = initApp;

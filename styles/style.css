@@ -159,6 +159,11 @@ textarea {
   font-size: 0.85rem;
 }
 
+select option {
+  background: var(--card);
+  color: var(--text);
+}
+
 .map-container {
   flex: 1;
   position: relative;
@@ -199,24 +204,48 @@ textarea {
   min-width: 0;
 }
 
-.nav-btn {
+.location-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   flex-shrink: 0;
+}
+
+.icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  background: var(--accent);
-  color: #fff;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-family: inherit;
   cursor: pointer;
 }
 
-.nav-btn:hover {
-  filter: brightness(1.1);
+.share-btn {
+  background: var(--card);
+  color: var(--text);
+}
+
+.share-btn:hover,
+.share-btn.share-btn-copied {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.share-btn.share-btn-copied {
+  color: var(--accent);
+}
+
+.nav-btn {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.icon-btn:hover {
+  filter: brightness(1.05);
 }
 
 /* Mobile Optimizations */
