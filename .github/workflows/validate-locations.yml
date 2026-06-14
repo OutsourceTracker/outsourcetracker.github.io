@@ -1,0 +1,30 @@
+name: Validate Locations
+
+on:
+  push:
+    paths:
+      - 'masterlist.json'
+      - 'Locations/**'
+      - 'scripts/validate-locations.py'
+      - '.github/workflows/validate-locations.yml'
+  pull_request:
+    paths:
+      - 'masterlist.json'
+      - 'Locations/**'
+      - 'scripts/validate-locations.py'
+      - '.github/workflows/validate-locations.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate location JSON and masterlist references
+        run: python scripts/validate-locations.py

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Trucking Locations</title>
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>Trucking Facility Maps</h1>
+      <div class="controls">
+        <input type="text" id="search" placeholder="Search locations, docks, notes..." onkeyup="filterLocations()">
+        <a href="editor/index.html" class="btn-link">Add Location</a>
+        <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="sidebar" id="sidebar">
+      <ul id="location-list"></ul>
+    </div>
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <script src="scripts/theme.js"></script>
+  <script src="scripts/marker-icons.js"></script>
+  <script src="scripts/script.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRaPp2QmC2QO47AypZnI8L4tLRuDWqd70&libraries=geometry,marker&loading=async&callback=initApp"></script>
+</body>
+</html>

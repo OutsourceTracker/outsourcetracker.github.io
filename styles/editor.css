@@ -1,0 +1,115 @@
+body {
+  margin: 0;
+  padding: 1rem;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.editor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.editor-header h1 {
+  margin: 0;
+}
+
+.container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  height: calc(100vh - 120px);
+}
+
+.form {
+  flex: 1;
+  min-width: 320px;
+  overflow-y: auto;
+}
+
+.map-container {
+  flex: 2;
+  min-height: 500px;
+  border: 1px solid var(--border);
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tools button,
+.form button {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tools button:hover,
+.form button:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.json-output {
+  margin-top: 1rem;
+  background: var(--card);
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  white-space: pre-wrap;
+  font-family: monospace;
+  font-size: 0.85rem;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.mode-active {
+  background: #22c55e !important;
+  color: white !important;
+  border-color: #16a34a !important;
+}
+
+.form h2 {
+  margin: 1.25rem 0 0.75rem;
+  font-size: 1rem;
+}
+
+.form h2:first-child {
+  margin-top: 0;
+}
+
+.hint {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0.5rem 0 1rem;
+}
+
+.draw-status {
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
