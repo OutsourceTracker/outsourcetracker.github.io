@@ -135,7 +135,28 @@ textarea {
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: var(--card);
-  padding: 0.5rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sidebar-filters select {
+  width: 100%;
+  margin-bottom: 0;
+  padding: 0.5rem;
+  font-size: 0.85rem;
 }
 
 .map-container {
@@ -164,6 +185,38 @@ textarea {
 #location-list li:hover,
 #location-list li.active {
   background: rgba(59, 130, 246, 0.1);
+}
+
+.location-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.location-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  filter: brightness(1.1);
 }
 
 /* Mobile Optimizations */

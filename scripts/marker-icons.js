@@ -40,10 +40,14 @@ function buildPinSvg(type, size = 32) {
 }
 
 function createMapPinElement(type, size = 32) {
+  const height = Math.round(size * 1.2);
   const pin = document.createElement('div');
   pin.className = `map-marker-pin map-marker-${type}`;
   pin.style.cursor = 'pointer';
   pin.style.lineHeight = '0';
+  pin.style.width = `${size}px`;
+  pin.style.height = `${height}px`;
+  pin.style.pointerEvents = 'auto';
   pin.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))';
   pin.innerHTML = buildPinSvg(type, size);
   return pin;

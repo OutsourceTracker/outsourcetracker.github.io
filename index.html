@@ -11,7 +11,7 @@
     <div class="header-content">
       <h1>Trucking Facility Maps</h1>
       <div class="controls">
-        <input type="text" id="search" placeholder="Search locations, docks, notes..." onkeyup="filterLocations()">
+        <input type="text" id="search" placeholder="Search locations..." onkeyup="filterLocations()">
         <a href="editor/index.html" class="btn-link">Add Location</a>
         <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
       </div>
@@ -20,6 +20,11 @@
 
   <div class="container">
     <div class="sidebar" id="sidebar">
+      <div class="sidebar-filters">
+        <select id="filter-category" onchange="filterLocations()">
+          <option value="">All Categories</option>
+        </select>
+      </div>
       <ul id="location-list"></ul>
     </div>
     <div class="map-container">
