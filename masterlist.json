@@ -26,6 +26,15 @@
 	  "zip": "98383",
 	  "category": "Store",
 	  "filePath": "Locations/WinCo Foods/WinCo_Foods__169.json"
+	},
+	{
+	  "name": "Tree Top Selah Plant",
+	  "address": "205 S Railroad Ave",
+	  "city": "Selah",
+	  "state": "WA",
+	  "zip": "98942",
+	  "category": "Warehouse",
+	  "filePath": "Locations/Tree Top/Tree_Top_Selah_Plant.json"
 	}
   ]
 }
