@@ -1,5 +1,8 @@
 name: Validate & Generate Locations
 
+permissions:
+  contents: write
+
 on:
   push:
     paths:
