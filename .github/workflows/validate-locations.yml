@@ -1,21 +1,23 @@
-name: Validate Locations
+name: Validate & Generate Locations
 
 on:
   push:
     paths:
-      - 'masterlist.json'
       - 'Locations/**'
+      - 'schemas/**'
+      - 'scripts/generate-masterlist.py'
       - 'scripts/validate-locations.py'
       - '.github/workflows/validate-locations.yml'
   pull_request:
     paths:
-      - 'masterlist.json'
       - 'Locations/**'
+      - 'schemas/**'
+      - 'scripts/generate-masterlist.py'
       - 'scripts/validate-locations.py'
       - '.github/workflows/validate-locations.yml'
 
 jobs:
-  validate:
+  validate-and-generate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -26,5 +28,13 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Validate location JSON and masterlist references
-        run: python scripts/validate-locations.py
+      - name: Validate all location files & generate masterlist.json
+        run: python scripts/generate-masterlist.py
+
+      - name: Commit updated masterlist.json (if changed)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: regenerate masterlist.json from Locations/ sources [skip ci]"
+          file_pattern: masterlist.json
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
