@@ -6,6 +6,33 @@
   <title>Location JSON Editor</title>
   <link rel="stylesheet" href="../styles/style.css">
   <link rel="stylesheet" href="../styles/editor.css">
+  <style>
+    /* Mobile responsive improvements */
+    @media (max-width: 900px) {
+      .container {
+        flex-direction: column !important;
+      }
+      .form {
+        width: 100% !important;
+        max-height: 60vh;
+        overflow-y: auto;
+        border-right: none !important;
+        border-bottom: 1px solid #374151;
+      }
+      .map-container {
+        width: 100% !important;
+        height: 50vh !important;
+      }
+      .btn-primary {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        width: 100%;
+        margin-top: 12px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="editor-header">
@@ -37,6 +64,7 @@
       <h2>Map Drawing & Editing Tools</h2>
       <p class="hint">Pan/zoom, draw or <strong>edit</strong> boundaries/markers directly on map. Click markers for label/notes edit.</p>
       <p class="draw-status" id="drawStatus">Choose a tool or click existing markers to edit.</p>
+
       <div class="tools">
         <button type="button" onclick="setDrawingMode('polygon')">Boundary Polygon</button>
         <button type="button" onclick="setDrawingMode('polyline')">Navigation Path</button>
@@ -50,6 +78,7 @@
 
       <button type="button" onclick="generateJSON()" class="btn-primary">Generate &amp; Download Location JSON</button>
       <button type="button" onclick="copyJSON()">Copy JSON to Clipboard</button>
+
       <input type="file" id="loadFile" accept=".json" onchange="loadExistingJSON(event)">
       <p class="hint">Save under Locations/&lt;Company&gt;/&lt;Name&gt;.json. masterlist.json is now auto-generated from CI.</p>
     </div>
@@ -62,7 +91,7 @@
   <div class="json-output" id="jsonOutput">Generated location JSON will appear here.</div>
 
   <!-- Marker edit modal -->
-  <div id="markerEditModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid #ccc; z-index:1000; box-shadow:0 4px 20px rgba(0,0,0,0.3); border-radius:8px;">
+  <div id="markerEditModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid #ccc; z-index:1000; box-shadow:0 4px 20px rgba(0,0,0,0.3); border-radius:8px; max-width:320px; width:90%;">
     <h3>Edit Marker</h3>
     <label>Label:<br><input type="text" id="modalLabel" style="width:100%; padding:6px; margin-top:4px;"></label><br><br>
     <label>Notes:<br><textarea id="modalNotes" rows="3" style="width:100%; padding:6px; margin-top:4px;"></textarea></label><br><br>
@@ -73,6 +102,6 @@
   <script src="../scripts/theme.js"></script>
   <script src="../scripts/marker-icons.js"></script>
   <script src="../scripts/editor.js"></script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRaPp2QmC2QO47AypZnI8L4tLRuDWqd70&amp;libraries=geometry,marker&amp;loading=async&amp;callback=initEditor"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRaPp2QmC2QO47AypZnI8L4tLRuDWqd70&libraries=geometry,marker&loading=async&callback=initEditor"></script>
 </body>
 </html>
