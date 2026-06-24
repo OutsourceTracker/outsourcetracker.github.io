@@ -19,6 +19,15 @@
       "filePath": "Locations/WinCo Foods/WinCo_Foods__105.json"
     },
     {
+      "name": "WinCo Foods #106",
+      "address": "1913 S 72nd ST",
+      "city": "Tacoma",
+      "state": "WA",
+      "zip": "98408",
+      "category": "Store",
+      "filePath": "Locations/WinCo Foods/WinCo_Foods__106.json"
+    },
+    {
       "name": "WinCo Foods #169",
       "address": "10315 Silverdale Way NW",
       "city": "Silverdale",
