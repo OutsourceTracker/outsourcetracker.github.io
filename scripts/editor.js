@@ -527,12 +527,8 @@ function downloadJson(jsonStr, fileName) {
 }
 
 function copyJSON() {
+  updateJsonPreview();
   const output = document.getElementById('jsonOutput').textContent;
-  if (!output || output === 'Generated location JSON will appear here.') {
-    updateJsonPreview();
-    return copyJSON();
-  }
-
   navigator.clipboard.writeText(output).then(() => setStatus('JSON copied to clipboard.'));
 }
 
