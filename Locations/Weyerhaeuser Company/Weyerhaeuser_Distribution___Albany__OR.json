@@ -1,6 +1,6 @@
 {
   "$schema": "../../schemas/location-detail.schema.json",
-  "name": "Weyerhaeuser Distribution",
+  "name": "Weyerhaeuser Distribution - Albany",
   "address": "2812 OLD SALEM RD NE",
   "city": "ALBANY",
   "state": "OR",

@@ -1,6 +1,6 @@
 {
   "$schema": "../../schemas/location-detail.schema.json",
-  "name": "Weyerhaeuser Distribution",
+  "name": "Weyerhaeuser Distribution - Tacoma",
   "address": "3838 S 74TH ST",
   "city": "TACOMA",
   "state": "WA",

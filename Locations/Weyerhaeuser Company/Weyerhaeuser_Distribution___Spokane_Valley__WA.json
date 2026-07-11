@@ -1,6 +1,6 @@
 {
   "$schema": "../../schemas/location-detail.schema.json",
-  "name": "Weyerhaeuser Distribution",
+  "name": "Weyerhaeuser Distribution - Spokane",
   "address": "17524 E EUCLID AVE",
   "city": "SPOKANE VALLEY",
   "state": "WA",
