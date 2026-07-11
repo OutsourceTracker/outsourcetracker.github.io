@@ -56,33 +56,45 @@ function createMapPinElement(type, size = 32) {
 function createEditorPinElement(label, type) {
   const wrap = document.createElement('div');
   wrap.className = 'map-marker-editor';
-  wrap.style.display = 'flex';
-  wrap.style.flexDirection = 'column';
-  wrap.style.alignItems = 'center';
-  wrap.style.cursor = 'grab';
 
   const pin = createMapPinElement(type, 30);
-  pin.style.cursor = 'grab';
   wrap.appendChild(pin);
 
   const text = document.createElement('div');
+  text.className = 'map-marker-editor-label';
   text.textContent = label;
-  text.style.marginTop = '2px';
-  text.style.padding = '2px 6px';
-  text.style.background = 'rgba(0,0,0,0.82)';
-  text.style.color = '#ffffff';
-  text.style.fontSize = '10px';
-  text.style.fontWeight = '600';
-  text.style.borderRadius = '4px';
-  text.style.whiteSpace = 'nowrap';
-  text.style.boxShadow = '0 1px 3px rgba(0,0,0,0.35)';
   wrap.appendChild(text);
 
   return wrap;
 }
 
+function getNavigationPathOptions(overrides = {}) {
+  const color = '#22c55e';
+  const weight = 6;
+
+  return {
+    strokeColor: color,
+    strokeOpacity: 0,
+    strokeWeight: weight,
+    icons: [
+      {
+        icon: {
+          path: 'M 0,-1 0,1',
+          strokeOpacity: 1,
+          strokeColor: color,
+          scale: weight / 1.5
+        },
+        offset: '0',
+        repeat: `${weight * 3}px`
+      }
+    ],
+    ...overrides
+  };
+}
+
 window.MarkerIcons = {
   MARKER_STYLES,
   createMapPinElement,
-  createEditorPinElement
+  createEditorPinElement,
+  getNavigationPathOptions
 };

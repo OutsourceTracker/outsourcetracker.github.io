@@ -6,6 +6,8 @@ let currentInfoWindow = null;
 let allMasterLocations = [];
 let activeLocationPath = null;
 let pendingDeepLink = null;
+let selectedNavTarget = null;
+let selectedNavMarker = null;
 const loadedDetails = new Map();
 const MAP_ID = '91655a72ee45e0e184bfe567';
 
@@ -63,22 +65,95 @@ function isMobileDevice() {
   );
 }
 
-function getNavigationTarget(master, details) {
+function getDefaultNavigationTarget(master, details) {
   const entrance = details?.truckEntrances?.[0];
   if (entrance?.lat != null && entrance?.lng != null) {
-    return { type: 'coords', lat: entrance.lat, lng: entrance.lng, label: 'entrance' };
+    return {
+      type: 'coords',
+      lat: entrance.lat,
+      lng: entrance.lng,
+      label: 'entrance',
+      name: entrance.label || 'Entrance'
+    };
   }
 
   const addressParts = [master.address, master.city, master.state, master.zip].filter(Boolean);
   if (addressParts.length > 0) {
-    return { type: 'address', query: addressParts.join(', '), label: 'address' };
+    return { type: 'address', query: addressParts.join(', '), label: 'address', name: 'Address' };
   }
 
   if (details?.latitude != null && details?.longitude != null) {
-    return { type: 'coords', lat: details.latitude, lng: details.longitude, label: 'facility' };
+    return {
+      type: 'coords',
+      lat: details.latitude,
+      lng: details.longitude,
+      label: 'facility',
+      name: 'Facility'
+    };
   }
 
   return null;
+}
+
+function getNavTargetLabel(target) {
+  if (!target) return 'location';
+  if (target.name) return target.name;
+  const labels = {
+    entrance: 'Entrance',
+    exit: 'Exit',
+    dock: 'Dock',
+    facility: 'Facility',
+    address: 'Address'
+  };
+  return labels[target.label] || 'Location';
+}
+
+function selectNavigationTarget(target, marker = null) {
+  selectedNavTarget = target;
+  updateMarkerSelectionHighlight(marker);
+  updateActiveNavTargetUI();
+}
+
+function updateMarkerSelectionHighlight(marker) {
+  if (selectedNavMarker?.content) {
+    selectedNavMarker.content.classList.remove('nav-target-selected');
+  }
+
+  selectedNavMarker = marker;
+
+  if (marker?.content) {
+    marker.content.classList.add('nav-target-selected');
+  }
+}
+
+function updateActiveNavTargetUI() {
+  const activeItem = document.querySelector('#location-list li.active');
+  if (!activeItem) return;
+
+  const label = getNavTargetLabel(selectedNavTarget);
+  const navBtn = activeItem.querySelector('.nav-btn');
+  if (navBtn) {
+    navBtn.setAttribute('aria-label', `Navigate to ${label}`);
+  }
+
+  const info = activeItem.querySelector('.location-info');
+  let hint = activeItem.querySelector('.nav-target-hint');
+
+  if (selectedNavTarget && info) {
+    if (!hint) {
+      hint = document.createElement('small');
+      hint.className = 'nav-target-hint';
+      info.appendChild(hint);
+    }
+    hint.textContent = `Navigate target: ${label}`;
+  } else if (hint) {
+    hint.remove();
+  }
+}
+
+function resetNavigationTarget() {
+  selectedNavTarget = null;
+  updateMarkerSelectionHighlight(null);
 }
 
 function buildNavigationUrl(target) {
@@ -231,7 +306,11 @@ async function handleNavigateClick(event, loc) {
   event.stopPropagation();
 
   const details = await loadLocationDetails(loc.filePath);
-  const navUrl = buildNavigationUrl(getNavigationTarget(loc, details));
+  const target =
+    loc.filePath === activeLocationPath && selectedNavTarget
+      ? selectedNavTarget
+      : getDefaultNavigationTarget(loc, details);
+  const navUrl = buildNavigationUrl(target);
   if (!navUrl) return;
 
   if (isMobileDevice()) {
@@ -294,6 +373,7 @@ function locationMatchesSearch(loc, term) {
 
 function filterLocations() {
   renderLocationList(getFilteredLocations());
+  updateActiveNavTargetUI();
 }
 
 function clearMapGraphics() {
@@ -305,6 +385,7 @@ function clearMapGraphics() {
   mapOverlays = [];
   currentInfoWindow?.close();
   currentInfoWindow = null;
+  resetNavigationTarget();
 }
 
 function getMarkerColor(type) {
@@ -335,7 +416,7 @@ function buildInfoContent(loc) {
       ${address ? `<p style="margin:0 0 0.5rem;color:#374151;">${address}</p>` : ''}
       <p style="margin:0;color:#374151;">${loc.notes || 'No driver notes.'}</p>
       ${dockList}
-      <p style="margin:0.75rem 0 0;font-size:0.8rem;color:#6b7280;">Tap map pins to see entrance, exit, and dock labels.</p>
+      <p style="margin:0.75rem 0 0;font-size:0.8rem;color:#6b7280;">Tap a pin to select it as the navigate target and view details.</p>
     </div>
   `;
 }
@@ -429,29 +510,60 @@ function getFacilityPosition(loc) {
   return candidates[0];
 }
 
-function fitMapToLocation(loc) {
+function getLocationBounds(loc) {
   const bounds = new google.maps.LatLngBounds();
-  bounds.extend(getFacilityPosition(loc));
 
-  const extendPoints = (points) => {
-    points?.forEach((pt) => bounds.extend({ lat: pt.lat, lng: pt.lng }));
+  const extend = (lat, lng) => {
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      bounds.extend({ lat, lng });
+    }
   };
 
-  extendPoints(loc.boundary);
-  extendPoints(loc.truckEntrances);
-  extendPoints(loc.truckExits);
-  extendPoints(loc.docks);
-  extendPoints(loc.navigationPath);
+  const facilityPosition = getFacilityPosition(loc);
+  extend(loc.latitude, loc.longitude);
+  extend(facilityPosition.lat, facilityPosition.lng);
+  loc.boundary?.forEach((pt) => extend(pt.lat, pt.lng));
+  loc.truckEntrances?.forEach((pt) => extend(pt.lat, pt.lng));
+  loc.truckExits?.forEach((pt) => extend(pt.lat, pt.lng));
+  loc.docks?.forEach((dock) => extend(dock.lat, dock.lng));
+  loc.navigationPath?.forEach((pt) => extend(pt.lat, pt.lng));
 
-  map.fitBounds(bounds);
-  google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
-    if (map.getZoom() > 18) map.setZoom(18);
+  return bounds;
+}
+
+function fitMapToLocation(loc) {
+  if (!map) return;
+
+  const bounds = getLocationBounds(loc);
+  if (bounds.isEmpty()) return;
+
+  google.maps.event.trigger(map, 'resize');
+
+  const padding = { top: 56, right: 56, bottom: 56, left: 56 };
+  map.fitBounds(bounds, padding);
+
+  google.maps.event.addListenerOnce(map, 'idle', () => {
+    const zoom = map.getZoom();
+    if (zoom == null) return;
+
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    const latSpan = Math.abs(ne.lat() - sw.lat());
+    const lngSpan = Math.abs(ne.lng() - sw.lng());
+    const isCompactSite = latSpan < 0.01 && lngSpan < 0.01;
+
+    if (isCompactSite && zoom > 18) {
+      map.setZoom(18);
+    }
   });
+}
+
+function scheduleFitMapToLocation(loc) {
+  requestAnimationFrame(() => fitMapToLocation(loc));
 }
 
 function showLocationOnMap(loc) {
   clearMapGraphics();
-  fitMapToLocation(loc);
 
   if (loc.boundary && loc.boundary.length > 2) {
     mapOverlays.push(
@@ -471,10 +583,8 @@ function showLocationOnMap(loc) {
   if (loc.navigationPath && loc.navigationPath.length > 1) {
     mapOverlays.push(
       new google.maps.Polyline({
+        ...MarkerIcons.getNavigationPathOptions(),
         path: loc.navigationPath,
-        strokeColor: '#22c55e',
-        strokeOpacity: 1,
-        strokeWeight: 6,
         clickable: false,
         map
       })
@@ -489,19 +599,29 @@ function showLocationOnMap(loc) {
     content: MarkerIcons.createMapPinElement('facility', 34)
   });
   bindMarkerClick(facilityMarker, () => {
+    selectNavigationTarget(
+      {
+        type: 'coords',
+        lat: facilityPosition.lat,
+        lng: facilityPosition.lng,
+        label: 'facility',
+        name: loc.name
+      },
+      facilityMarker
+    );
     currentInfoWindow?.close();
     currentInfoWindow = new google.maps.InfoWindow({ content: buildInfoContent(loc) });
     currentInfoWindow.open({ anchor: facilityMarker, map });
   });
   markers.push(facilityMarker);
 
+  const entranceMarkers = [];
   loc.truckEntrances?.forEach((pt) => {
-    addPointMarker(pt, pt.label || 'Entrance', 'entrance');
+    entranceMarkers.push(addPointMarker(pt, pt.label || 'Entrance', 'entrance'));
   });
   loc.truckExits?.forEach((pt) => {
     addPointMarker(pt, pt.label || 'Exit', 'exit');
   });
-
   loc.docks?.forEach((dock) => {
     addPointMarker(
       { lat: dock.lat, lng: dock.lng },
@@ -510,6 +630,22 @@ function showLocationOnMap(loc) {
       dock.notes || 'No dock notes.'
     );
   });
+
+  const master = {
+    address: loc.address,
+    city: loc.city,
+    state: loc.state,
+    zip: loc.zip
+  };
+  const defaultTarget = getDefaultNavigationTarget(master, loc);
+  let defaultMarker = facilityMarker;
+
+  if (defaultTarget?.label === 'entrance' && entranceMarkers.length > 0) {
+    defaultMarker = entranceMarkers[0];
+  }
+
+  selectNavigationTarget(defaultTarget, defaultMarker);
+  scheduleFitMapToLocation(loc);
 
   currentInfoWindow = new google.maps.InfoWindow({ content: buildInfoContent(loc) });
   currentInfoWindow.open({ anchor: facilityMarker, map });
@@ -522,8 +658,21 @@ function addPointMarker(pt, title, type, body = '') {
     title,
     content: MarkerIcons.createMapPinElement(type, 30)
   });
-  bindMarkerClick(marker, () => openPointInfo(marker, title, body, type));
+  bindMarkerClick(marker, () => {
+    selectNavigationTarget(
+      {
+        type: 'coords',
+        lat: pt.lat,
+        lng: pt.lng,
+        label: type,
+        name: title
+      },
+      marker
+    );
+    openPointInfo(marker, title, body, type);
+  });
   markers.push(marker);
+  return marker;
 }
 
 async function initApp() {

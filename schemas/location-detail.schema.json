@@ -1,1 +1,162 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://outsourcetracker.github.io/schemas/location-detail.schema.json","title":"Location Detail","description":"Source of truth for a single OutsourceTracker location. masterlist.json is generated from these files.","type":"object","additionalProperties":false,"required":["name","address","city","state","zip","category","latitude","longitude","notes","boundary","truckEntrances","truckExits","docks","navigationPath"],"properties":{"$schema":{"type":"string"},"name":{"type":"string","minLength":1},"address":{"type":"string","minLength":1},"city":{"type":"string","minLength":1},"state":{"type":"string","minLength":2,"maxLength":2,"pattern":"^[A-Z]{2}$"},"zip":{"type":"string","pattern":"^\\d{5}(-\\d{4})?$"},"category":{"enum":["Store","Warehouse","Terminal","Other"]},"latitude":{"type":"number","minimum":-90,"maximum":90},"longitude":{"type":"number","minimum":-180,"maximum":180},"notes":{"type":"string"},"boundary":{"type":"array","minItems":3,"items":{"$ref":"#/$defs/latLngPoint"}},"truckEntrances":{"type":"array","items":{"allOf":[{"$ref":"#/$defs/latLngPoint"},{"required":["label"],"properties":{"label":{"type":"string","minLength":1}}}]}},"truckExits":{"$ref":"#/properties/truckEntrances"},"docks":{"type":"array","items":{"allOf":[{"$ref":"#/$defs/latLngPoint"},{"required":["name"],"properties":{"name":{"type":"string","minLength":1},"notes":{"type":"string"}}}]}},"navigationPath":{"type":"array","items":{"$ref":"#/$defs/latLngPoint"}}},"$defs":{"latLngPoint":{"type":"object","required":["lat","lng"],"additionalProperties":false,"properties":{"lat":{"type":"number","minimum":-90,"maximum":90},"lng":{"type":"number","minimum":-180,"maximum":180}}}}}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outsourcetracker.github.io/schemas/location-detail.schema.json",
+  "title": "Location Detail",
+  "description": "Source of truth for a single OutsourceTracker location. masterlist.json is generated from these files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "address",
+    "city",
+    "state",
+    "zip",
+    "category",
+    "latitude",
+    "longitude",
+    "notes",
+    "boundary",
+    "truckEntrances",
+    "truckExits",
+    "docks",
+    "navigationPath"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "address": {
+      "type": "string",
+      "minLength": 1
+    },
+    "city": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 2,
+      "pattern": "^[A-Z]{2}$"
+    },
+    "zip": {
+      "type": "string",
+      "pattern": "^\\d{5}(-\\d{4})?$"
+    },
+    "category": {
+      "enum": ["Store", "Warehouse", "Terminal", "Other"]
+    },
+    "latitude": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "longitude": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "notes": {
+      "type": "string"
+    },
+    "boundary": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "$ref": "#/$defs/latLngPoint"
+      }
+    },
+    "truckEntrances": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/labeledPoint"
+      }
+    },
+    "truckExits": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/labeledPoint"
+      }
+    },
+    "docks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dockPoint"
+      }
+    },
+    "navigationPath": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/latLngPoint"
+      }
+    }
+  },
+  "$defs": {
+    "latLngPoint": {
+      "type": "object",
+      "required": ["lat", "lng"],
+      "additionalProperties": false,
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lng": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      }
+    },
+    "labeledPoint": {
+      "type": "object",
+      "required": ["lat", "lng", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lng": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "dockPoint": {
+      "type": "object",
+      "required": ["lat", "lng", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lng": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

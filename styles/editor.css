@@ -1,6 +1,10 @@
-body {
-  margin: 0;
+body.editor-page {
+  height: auto;
+  min-height: 100vh;
+  overflow: auto;
+  display: block;
   padding: 1rem;
+  box-sizing: border-box;
 }
 
 .editor-header {
@@ -20,24 +24,28 @@ body {
 
 .editor-header h1 {
   margin: 0;
+  font-size: 1.5rem;
 }
 
-.container {
+.editor-main {
   display: flex;
   gap: 1rem;
-  flex-wrap: wrap;
-  height: calc(100vh - 120px);
+  min-height: 520px;
+  height: calc(100vh - 11rem);
 }
 
 .form {
   flex: 1;
-  min-width: 320px;
+  min-width: 300px;
+  max-width: 420px;
   overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 .map-container {
   flex: 2;
-  min-height: 500px;
+  min-width: 0;
+  min-height: 400px;
   border: 1px solid var(--border);
   position: relative;
   border-radius: 8px;
@@ -57,17 +65,18 @@ body {
 }
 
 .tools button,
-.form button {
+.form button:not(.btn-primary) {
   padding: 0.6rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--card);
   color: var(--text);
   cursor: pointer;
+  font: inherit;
 }
 
 .tools button:hover,
-.form button:hover {
+.form button:not(.btn-primary):hover {
   background: rgba(59, 130, 246, 0.1);
 }
 
@@ -75,12 +84,12 @@ body {
   margin-top: 1rem;
   background: var(--card);
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   white-space: pre-wrap;
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;
-  max-height: 300px;
+  max-height: 220px;
   overflow: auto;
 }
 
@@ -101,8 +110,9 @@ body {
 
 .hint {
   font-size: 0.85rem;
-  opacity: 0.75;
+  opacity: 0.8;
   margin: 0.5rem 0 1rem;
+  line-height: 1.4;
 }
 
 .draw-status {
@@ -112,4 +122,133 @@ body {
   background: rgba(59, 130, 246, 0.1);
   border-radius: 8px;
   border: 1px solid var(--border);
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 360px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.modal-panel h3 {
+  margin: 0 0 1rem;
+}
+
+.modal-panel label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.modal-panel input,
+.modal-panel textarea {
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.modal-actions .btn-primary,
+.modal-actions .btn-secondary {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
+}
+
+.btn-secondary {
+  padding: 0.85rem;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.map-marker-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: grab;
+}
+
+.map-marker-editor .map-marker-pin {
+  cursor: grab;
+}
+
+.map-marker-editor-label {
+  margin-top: 2px;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.82);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 900px) {
+  .editor-main {
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+  }
+
+  .form {
+    max-width: none;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+  }
+
+  .map-container {
+    width: 100%;
+    min-height: 50vh;
+    height: 50vh;
+  }
+
+  .btn-primary {
+    position: sticky;
+    bottom: 0.5rem;
+    z-index: 2;
+  }
 }

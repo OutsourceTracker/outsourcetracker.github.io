@@ -8,15 +8,15 @@ on:
     paths:
       - 'Locations/**'
       - 'schemas/**'
-      - 'scripts/generate-masterlist.py'
       - 'scripts/validate-locations.py'
+      - 'requirements.txt'
       - '.github/workflows/validate-locations.yml'
   pull_request:
     paths:
       - 'Locations/**'
       - 'schemas/**'
-      - 'scripts/generate-masterlist.py'
       - 'scripts/validate-locations.py'
+      - 'requirements.txt'
       - '.github/workflows/validate-locations.yml'
 
 jobs:
@@ -31,8 +31,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install validation dependencies
+        run: pip install -r requirements.txt
+
       - name: Validate all location files & generate masterlist.json
-        run: python scripts/generate-masterlist.py
+        run: python scripts/validate-locations.py
 
       - name: Commit updated masterlist.json (if changed)
         uses: stefanzweifel/git-auto-commit-action@v5

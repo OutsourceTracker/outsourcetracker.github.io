@@ -6,44 +6,17 @@
   <title>Location JSON Editor</title>
   <link rel="stylesheet" href="../styles/style.css">
   <link rel="stylesheet" href="../styles/editor.css">
-  <style>
-    /* Mobile responsive improvements */
-    @media (max-width: 900px) {
-      .container {
-        flex-direction: column !important;
-      }
-      .form {
-        width: 100% !important;
-        max-height: 60vh;
-        overflow-y: auto;
-        border-right: none !important;
-        border-bottom: 1px solid #374151;
-      }
-      .map-container {
-        width: 100% !important;
-        height: 50vh !important;
-      }
-      .btn-primary {
-        position: sticky;
-        bottom: 0;
-        z-index: 10;
-        width: 100%;
-        margin-top: 12px;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
-      }
-    }
-  </style>
 </head>
-<body>
-  <div class="editor-header">
+<body class="editor-page">
+  <header class="editor-header">
     <h1>Location JSON Editor</h1>
     <div class="editor-header-actions">
       <a href="../index.html" class="btn-link">Back to Map</a>
       <button id="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
     </div>
-  </div>
+  </header>
 
-  <div class="container">
+  <main class="editor-main">
     <div class="form">
       <h2>Metadata</h2>
       <input type="text" id="name" placeholder="Location Name (e.g. WinCo Foods Tacoma)" required>
@@ -61,42 +34,53 @@
       </select>
       <textarea id="notes" rows="3" placeholder="Driver notes (gate codes, contacts, reefer info...)"></textarea>
 
-      <h2>Map Drawing & Editing Tools</h2>
-      <p class="hint">Pan/zoom, draw or <strong>edit</strong> boundaries/markers directly on map. Click markers for label/notes edit.</p>
+      <h2>Map Drawing &amp; Editing Tools</h2>
+      <p class="hint">Pan/zoom the map, draw shapes, or click existing markers to edit labels and notes.</p>
       <p class="draw-status" id="drawStatus">Choose a tool or click existing markers to edit.</p>
 
       <div class="tools">
-        <button type="button" onclick="setDrawingMode('polygon')">Boundary Polygon</button>
-        <button type="button" onclick="setDrawingMode('polyline')">Navigation Path</button>
-        <button type="button" onclick="setDrawingMode('entrance')">Add Entrance</button>
-        <button type="button" onclick="setDrawingMode('exit')">Add Exit</button>
-        <button type="button" onclick="setDrawingMode('dock')">Add Dock</button>
-        <button type="button" onclick="finishDrawing()">Finish Shape</button>
-        <button type="button" onclick="cancelDrawing()">Cancel</button>
-        <button type="button" onclick="clearAll()">Clear All</button>
+        <button type="button" data-mode="polygon">Boundary Polygon</button>
+        <button type="button" data-mode="polyline">Navigation Path</button>
+        <button type="button" data-mode="entrance">Add Entrance</button>
+        <button type="button" data-mode="exit">Add Exit</button>
+        <button type="button" data-mode="dock">Add Dock</button>
+        <button type="button" id="finishDrawingBtn">Finish Shape</button>
+        <button type="button" id="cancelDrawingBtn">Cancel</button>
+        <button type="button" id="clearAllBtn">Clear All</button>
       </div>
 
-      <button type="button" onclick="generateJSON()" class="btn-primary">Generate &amp; Download Location JSON</button>
-      <button type="button" onclick="copyJSON()">Copy JSON to Clipboard</button>
+      <div class="form-actions">
+        <button type="button" onclick="generateJSON()" class="btn-primary">Generate &amp; Download Location JSON</button>
+        <button type="button" onclick="copyJSON()">Copy JSON to Clipboard</button>
+        <input type="file" id="loadFile" accept=".json" onchange="loadExistingJSON(event)">
+      </div>
 
-      <input type="file" id="loadFile" accept=".json" onchange="loadExistingJSON(event)">
-      <p class="hint">Save under Locations/&lt;Company&gt;/&lt;Name&gt;.json. masterlist.json is now auto-generated from CI.</p>
+      <p class="hint">Save under Locations/&lt;Company&gt;/&lt;Name&gt;.json. masterlist.json is auto-generated from CI.</p>
     </div>
 
     <div class="map-container">
       <div id="map"></div>
     </div>
-  </div>
+  </main>
 
-  <div class="json-output" id="jsonOutput">Generated location JSON will appear here.</div>
+  <section class="json-output" id="jsonOutput">Generated location JSON will appear here.</section>
 
-  <!-- Marker edit modal -->
-  <div id="markerEditModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border:1px solid #ccc; z-index:1000; box-shadow:0 4px 20px rgba(0,0,0,0.3); border-radius:8px; max-width:320px; width:90%;">
-    <h3>Edit Marker</h3>
-    <label>Label:<br><input type="text" id="modalLabel" style="width:100%; padding:6px; margin-top:4px;"></label><br><br>
-    <label>Notes:<br><textarea id="modalNotes" rows="3" style="width:100%; padding:6px; margin-top:4px;"></textarea></label><br><br>
-    <button onclick="saveMarkerEdit()" style="margin-right:8px;">Save</button>
-    <button onclick="closeMarkerEditModal()">Cancel</button>
+  <div class="modal-backdrop" id="markerEditModal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-labelledby="markerEditTitle">
+      <h3 id="markerEditTitle">Edit Marker</h3>
+      <label>
+        Label
+        <input type="text" id="modalLabel">
+      </label>
+      <label>
+        Notes
+        <textarea id="modalNotes" rows="3"></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" onclick="saveMarkerEdit()">Save</button>
+        <button type="button" class="btn-secondary" onclick="closeMarkerEditModal()">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <script src="../scripts/theme.js"></script>

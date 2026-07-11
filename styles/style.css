@@ -248,6 +248,19 @@ select option {
   filter: brightness(1.05);
 }
 
+.nav-target-hint {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+.map-marker-pin.nav-target-selected {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   .container {
