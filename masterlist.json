@@ -10,6 +10,33 @@
       "filePath": "Locations/Tree Top/Tree_Top_Selah_Plant.json"
     },
     {
+      "name": "Weyerhaeuser Distribution - Albany",
+      "address": "2812 OLD SALEM RD NE",
+      "city": "ALBANY",
+      "state": "OR",
+      "zip": "97321",
+      "category": "Warehouse",
+      "filePath": "Locations/Weyerhaeuser Company/Weyerhaeuser_Distribution___Albany__OR.json"
+    },
+    {
+      "name": "Weyerhaeuser Distribution - Spokane",
+      "address": "17524 E EUCLID AVE",
+      "city": "SPOKANE VALLEY",
+      "state": "WA",
+      "zip": "99216-1761",
+      "category": "Warehouse",
+      "filePath": "Locations/Weyerhaeuser Company/Weyerhaeuser_Distribution___Spokane_Valley__WA.json"
+    },
+    {
+      "name": "Weyerhaeuser Distribution - Tacoma",
+      "address": "3838 S 74TH ST",
+      "city": "TACOMA",
+      "state": "WA",
+      "zip": "33619-6410",
+      "category": "Warehouse",
+      "filePath": "Locations/Weyerhaeuser Company/Weyerhaeuser_Distribution___Tacoma__WA.json"
+    },
+    {
       "name": "WinCo Foods #105",
       "address": "4969 Kitsap Way",
       "city": "Bremerton",
