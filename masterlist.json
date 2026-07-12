@@ -38,17 +38,17 @@
     },
     {
       "name": "WinCo Foods #105",
-      "address": "4969 Kitsap Way",
-      "city": "Bremerton",
+      "address": "4969 KITSAP WAY",
+      "city": "BREMERTON",
       "state": "WA",
-      "zip": "98312",
+      "zip": "98312-2372",
       "category": "Store",
       "filePath": "Locations/WinCo Foods/WinCo_Foods__105.json"
     },
     {
       "name": "WinCo Foods #106",
-      "address": "1913 S 72nd ST",
-      "city": "Tacoma",
+      "address": "1913 S 72ND ST",
+      "city": "TACOMA",
       "state": "WA",
       "zip": "98408",
       "category": "Store",
@@ -56,19 +56,19 @@
     },
     {
       "name": "WinCo Foods #169",
-      "address": "10315 Silverdale Way NW",
-      "city": "Silverdale",
+      "address": "10315 DILVERDALE WAY NW",
+      "city": "SILVERDALE",
       "state": "WA",
-      "zip": "98383",
+      "zip": "98383-7691",
       "category": "Store",
       "filePath": "Locations/WinCo Foods/WinCo_Foods__169.json"
     },
     {
       "name": "WinCo Foods #170",
-      "address": "6201 6th Ave",
-      "city": "Tacoma",
+      "address": "6201 6TH AVE",
+      "city": "TACOMA",
       "state": "WA",
-      "zip": "98406",
+      "zip": "98406-2019",
       "category": "Store",
       "filePath": "Locations/WinCo Foods/WinCo_Foods__170.json"
     }
