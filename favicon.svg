@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Trucking Facility Maps">
+  <!-- Tab-friendly rounded tile -->
+  <rect width="32" height="32" rx="7" fill="#0f172a"/>
+  <!-- Map pin (facility yellow) -->
+  <path
+    d="M16 3.2c-4.9 0-8.9 3.9-8.9 8.8 0 6.4 8.9 14.2 8.9 14.2s8.9-7.8 8.9-14.2c0-4.9-4-8.8-8.9-8.8z"
+    fill="#eab308"
+    stroke="#ffffff"
+    stroke-width="1.4"
+    stroke-linejoin="round"
+  />
+  <!-- Warehouse glyph -->
+  <path
+    d="M10.4 14.1 16 10.4l5.6 3.7v5.8H10.4v-5.8z"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="1.35"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M13.2 19.9v-3.2h5.6v3.2"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="1.25"
+    stroke-linejoin="round"
+  />
+</svg>
