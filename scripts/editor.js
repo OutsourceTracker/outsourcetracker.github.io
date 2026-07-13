@@ -16,6 +16,8 @@ let geocoder = null;
 let geocodeTimer = null;
 let lastGeocodedQuery = '';
 let suppressAddressGeocode = false;
+let masterLocations = [];
+const MASTERLIST_URL = '../masterlist.json';
 
 const POLYGON_OPTIONS = {
   strokeColor: '#ef4444',
@@ -66,28 +68,6 @@ function updateOverlayHitTargets(mode) {
   });
 }
 
-function bindMarkerClick(marker, handler) {
-  let lastFire = 0;
-
-  const fire = () => {
-    const now = Date.now();
-    if (now - lastFire < 250) return;
-    lastFire = now;
-    handler();
-  };
-
-  marker.gmpClickable = true;
-  marker.addEventListener('gmp-click', fire);
-
-  const content = marker.content;
-  if (content instanceof HTMLElement) {
-    content.addEventListener('click', (event) => {
-      event.stopPropagation();
-      fire();
-    });
-  }
-}
-
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     mapId: MAP_ID,
@@ -111,6 +91,7 @@ function getMarkerPosition(marker) {
 
 function refreshMarkerContent(marker) {
   marker.content = MarkerIcons.createEditorPinElement(marker.__label || '', marker.__type || 'dock');
+  bindMarkerContentListeners(marker);
 }
 
 function createEditorMarker(position, label, type, notes = '') {
@@ -127,14 +108,103 @@ function createEditorMarker(position, label, type, notes = '') {
   return marker;
 }
 
-function attachMarkerEditListener(marker) {
-  bindMarkerClick(marker, () => {
-    if (currentMode) return;
-    openMarkerEditModal(marker);
+function getMarkerCollection(type) {
+  if (type === 'entrance') return entranceMarkers;
+  if (type === 'exit') return exitMarkers;
+  if (type === 'dock') return dockMarkers;
+  return null;
+}
+
+function markerTypeLabel(type) {
+  if (type === 'entrance') return 'entrance';
+  if (type === 'exit') return 'exit';
+  if (type === 'dock') return 'dock';
+  return 'marker';
+}
+
+function removeMarker(marker) {
+  if (!marker) return;
+
+  const collection = getMarkerCollection(marker.__type);
+  if (collection) {
+    const index = collection.indexOf(marker);
+    if (index !== -1) collection.splice(index, 1);
+  }
+
+  marker.map = null;
+  hideMarkerContextMenu();
+
+  if (currentEditingMarker === marker) {
+    closeMarkerEditModal();
+  }
+
+  const label = marker.__label || markerTypeLabel(marker.__type);
+  setStatus(`Removed ${label}.`);
+  updateJsonPreview();
+}
+
+function bindMarkerContentListeners(marker) {
+  const content = marker.content;
+  if (!(content instanceof HTMLElement)) return;
+
+  content.addEventListener('click', (event) => {
+    event.stopPropagation();
+    marker.__fireEdit?.();
+  });
+
+  content.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    showMarkerContextMenu(event.clientX, event.clientY, marker);
   });
 }
 
+function attachMarkerEditListener(marker) {
+  let lastFire = 0;
+
+  const fireEdit = () => {
+    if (currentMode) return;
+    const now = Date.now();
+    if (now - lastFire < 250) return;
+    lastFire = now;
+    openMarkerEditModal(marker);
+  };
+
+  marker.__fireEdit = fireEdit;
+  marker.gmpClickable = true;
+  marker.addEventListener('gmp-click', fireEdit);
+  bindMarkerContentListeners(marker);
+}
+
+function showMarkerContextMenu(clientX, clientY, marker) {
+  const menu = document.getElementById('markerContextMenu');
+  if (!menu) return;
+
+  menu.__targetMarker = marker;
+  menu.hidden = false;
+  menu.setAttribute('aria-hidden', 'false');
+
+  const menuWidth = menu.offsetWidth;
+  const menuHeight = menu.offsetHeight;
+  const maxX = window.innerWidth - menuWidth - 8;
+  const maxY = window.innerHeight - menuHeight - 8;
+  const left = Math.max(8, Math.min(clientX, maxX));
+  const top = Math.max(8, Math.min(clientY, maxY));
+
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+}
+
+function hideMarkerContextMenu() {
+  const menu = document.getElementById('markerContextMenu');
+  if (!menu) return;
+  menu.hidden = true;
+  menu.setAttribute('aria-hidden', 'true');
+  menu.__targetMarker = null;
+}
+
 function openMarkerEditModal(marker) {
+  hideMarkerContextMenu();
   currentEditingMarker = marker;
   document.getElementById('modalLabel').value = marker.__label || '';
   document.getElementById('modalNotes').value = marker.__notes || '';
@@ -149,6 +219,14 @@ function closeMarkerEditModal() {
   modal.classList.remove('open');
   modal.setAttribute('aria-hidden', 'true');
   currentEditingMarker = null;
+}
+
+function deleteCurrentMarker() {
+  if (!currentEditingMarker) return;
+  const marker = currentEditingMarker;
+  const label = marker.__label || markerTypeLabel(marker.__type);
+  if (!confirm(`Remove ${label}?`)) return;
+  removeMarker(marker);
 }
 
 function setDrawingMode(mode) {
@@ -415,6 +493,8 @@ function scheduleAddressGeocode() {
 
 function clearAll() {
   cancelDrawing();
+  hideMarkerContextMenu();
+  closeMarkerEditModal();
   if (boundaryPolygon) {
     boundaryPolygon.setMap(null);
     boundaryPolygon = null;
@@ -532,31 +612,125 @@ function copyJSON() {
   navigator.clipboard.writeText(output).then(() => setStatus('JSON copied to clipboard.'));
 }
 
+function resolveLocationFilePath(filePath) {
+  if (!filePath) return '';
+  if (/^https?:\/\//i.test(filePath) || filePath.startsWith('../') || filePath.startsWith('/')) {
+    return filePath;
+  }
+  return `../${filePath}`;
+}
+
+function populateMasterlistSelect() {
+  const select = document.getElementById('masterlistSelect');
+  if (!select) return;
+
+  select.innerHTML = '';
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = masterLocations.length
+    ? 'Select a location…'
+    : 'No locations in masterlist';
+  select.appendChild(placeholder);
+
+  masterLocations.forEach((loc) => {
+    const option = document.createElement('option');
+    option.value = loc.filePath || '';
+    const place = [loc.city, loc.state].filter(Boolean).join(', ');
+    option.textContent = place ? `${loc.name} (${place})` : loc.name || loc.filePath || 'Unnamed';
+    select.appendChild(option);
+  });
+}
+
+async function loadMasterList() {
+  const select = document.getElementById('masterlistSelect');
+  const loadBtn = document.getElementById('loadMasterlistBtn');
+  if (loadBtn) loadBtn.disabled = true;
+
+  try {
+    const res = await fetch(MASTERLIST_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    masterLocations = (data.locations || [])
+      .filter((loc) => loc?.filePath)
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+    populateMasterlistSelect();
+    if (loadBtn) loadBtn.disabled = masterLocations.length === 0;
+  } catch (error) {
+    console.error('Failed to load masterlist.json', error);
+    masterLocations = [];
+    if (select) {
+      select.innerHTML = '<option value="">Failed to load masterlist</option>';
+    }
+    if (loadBtn) loadBtn.disabled = true;
+    setStatus('Could not load masterlist.json. Serve this site over HTTP (not file://).');
+  }
+}
+
+function applyLocationData(data, statusMessage) {
+  suppressAddressGeocode = true;
+  document.getElementById('name').value = data.name || '';
+  document.getElementById('address').value = data.address || '';
+  document.getElementById('city').value = data.city || '';
+  document.getElementById('state').value = data.state || '';
+  document.getElementById('zip').value = data.zip || '';
+  document.getElementById('category').value = data.category || 'Warehouse';
+  document.getElementById('notes').value = data.notes || '';
+  lastGeocodedQuery = getAddressQuery();
+  suppressAddressGeocode = false;
+
+  if (data.latitude && data.longitude && map) {
+    map.setCenter({ lat: data.latitude, lng: data.longitude });
+    map.setZoom(17);
+  }
+
+  restoreMapFromData(data);
+  updateJsonPreview();
+  setStatus(statusMessage || 'Location loaded. Shapes restored on map.');
+}
+
+async function loadFromMasterlist() {
+  const select = document.getElementById('masterlistSelect');
+  const filePath = select?.value;
+  if (!filePath) {
+    setStatus('Select a location from the masterlist first.');
+    return;
+  }
+
+  if (!map) {
+    setStatus('Map is still loading. Try again in a moment.');
+    return;
+  }
+
+  const entry = masterLocations.find((loc) => loc.filePath === filePath);
+  const label = entry?.name || filePath;
+  const loadBtn = document.getElementById('loadMasterlistBtn');
+  if (loadBtn) loadBtn.disabled = true;
+  setStatus(`Loading ${label}…`);
+
+  try {
+    const res = await fetch(resolveLocationFilePath(filePath));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    applyLocationData(data, `Loaded ${data.name || label} from masterlist.`);
+  } catch (error) {
+    console.error('Failed to load location from masterlist', error);
+    alert('Could not load that location. Check that the file exists and you are serving over HTTP.');
+    setStatus(`Failed to load ${label} from masterlist.`);
+  } finally {
+    if (loadBtn) loadBtn.disabled = masterLocations.length === 0;
+  }
+}
+
 async function loadExistingJSON(e) {
   const file = e.target.files[0];
   if (!file) return;
 
   try {
     const data = JSON.parse(await file.text());
-    suppressAddressGeocode = true;
-    document.getElementById('name').value = data.name || '';
-    document.getElementById('address').value = data.address || '';
-    document.getElementById('city').value = data.city || '';
-    document.getElementById('state').value = data.state || '';
-    document.getElementById('zip').value = data.zip || '';
-    document.getElementById('category').value = data.category || 'Warehouse';
-    document.getElementById('notes').value = data.notes || '';
-    lastGeocodedQuery = getAddressQuery();
-    suppressAddressGeocode = false;
-
-    if (data.latitude && data.longitude && map) {
-      map.setCenter({ lat: data.latitude, lng: data.longitude });
-      map.setZoom(17);
-    }
-
-    restoreMapFromData(data);
-    updateJsonPreview();
-    setStatus('Location loaded. Shapes restored on map.');
+    applyLocationData(data, `Loaded ${data.name || file.name} from file.`);
   } catch (err) {
     alert('Could not load JSON file. Check the file format.');
     console.error(err);
@@ -583,15 +757,64 @@ function wireEditorControls() {
   document.getElementById('finishDrawingBtn').addEventListener('click', finishDrawing);
   document.getElementById('cancelDrawingBtn').addEventListener('click', cancelDrawing);
   document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+  document.getElementById('loadMasterlistBtn').addEventListener('click', loadFromMasterlist);
+  document.getElementById('masterlistSelect').addEventListener('change', () => {
+    const select = document.getElementById('masterlistSelect');
+    if (select?.value) {
+      setStatus(`Selected ${select.options[select.selectedIndex].text}. Click Load to open it.`);
+    }
+  });
+  document.getElementById('masterlistSelect').addEventListener('dblclick', () => {
+    if (document.getElementById('masterlistSelect')?.value) {
+      loadFromMasterlist();
+    }
+  });
 
   const modal = document.getElementById('markerEditModal');
   modal.addEventListener('click', (event) => {
     if (event.target === modal) closeMarkerEditModal();
   });
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeMarkerEditModal();
+  const contextMenu = document.getElementById('markerContextMenu');
+  contextMenu.addEventListener('click', (event) => {
+    const actionButton = event.target.closest('[data-action]');
+    if (!actionButton) return;
+
+    const marker = contextMenu.__targetMarker;
+    if (!marker) {
+      hideMarkerContextMenu();
+      return;
+    }
+
+    const action = actionButton.dataset.action;
+    if (action === 'edit') {
+      hideMarkerContextMenu();
+      if (!currentMode) openMarkerEditModal(marker);
+    } else if (action === 'remove') {
+      const label = marker.__label || markerTypeLabel(marker.__type);
+      hideMarkerContextMenu();
+      if (confirm(`Remove ${label}?`)) {
+        removeMarker(marker);
+      }
+    }
   });
+
+  document.addEventListener('click', (event) => {
+    const menu = document.getElementById('markerContextMenu');
+    if (!menu || menu.hidden) return;
+    if (menu.contains(event.target)) return;
+    hideMarkerContextMenu();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      hideMarkerContextMenu();
+      closeMarkerEditModal();
+    }
+  });
+
+  window.addEventListener('resize', hideMarkerContextMenu);
+  window.addEventListener('scroll', hideMarkerContextMenu, true);
 
   ['address', 'city', 'state', 'zip'].forEach((id) => {
     const field = document.getElementById(id);
@@ -603,11 +826,17 @@ function wireEditorControls() {
 async function initEditor() {
   Theme.init();
   wireEditorControls();
+  const masterlistPromise = loadMasterList();
 
   const { AdvancedMarkerElement: MarkerClass } = await google.maps.importLibrary('marker');
   AdvancedMarkerElement = MarkerClass;
   initMap();
-  setStatus('Choose a drawing tool to begin.');
+  await masterlistPromise;
+  setStatus(
+    masterLocations.length
+      ? 'Load a location from masterlist, or choose a drawing tool to begin.'
+      : 'Choose a drawing tool to begin.'
+  );
 }
 
 window.initEditor = initEditor;
@@ -618,5 +847,7 @@ window.clearAll = clearAll;
 window.generateJSON = generateJSON;
 window.copyJSON = copyJSON;
 window.loadExistingJSON = loadExistingJSON;
+window.loadFromMasterlist = loadFromMasterlist;
 window.saveMarkerEdit = saveMarkerEdit;
 window.closeMarkerEditModal = closeMarkerEditModal;
+window.deleteCurrentMarker = deleteCurrentMarker;

@@ -18,6 +18,18 @@
 
   <main class="editor-main">
     <div class="form">
+      <h2>Load Existing Location</h2>
+      <p class="hint">Load a published location from masterlist, or upload a local JSON file.</p>
+      <label class="field-label" for="masterlistSelect">From masterlist</label>
+      <div class="load-row">
+        <select id="masterlistSelect" aria-label="Published locations">
+          <option value="">Loading locations…</option>
+        </select>
+        <button type="button" id="loadMasterlistBtn">Load</button>
+      </div>
+      <label class="field-label" for="loadFile">Or from file</label>
+      <input type="file" id="loadFile" accept=".json" onchange="loadExistingJSON(event)">
+
       <h2>Metadata</h2>
       <input type="text" id="name" placeholder="Location Name (e.g. WinCo Foods Tacoma)" required>
       <input type="text" id="address" placeholder="Street Address">
@@ -35,7 +47,7 @@
       <textarea id="notes" rows="3" placeholder="Driver notes (gate codes, contacts, reefer info...)"></textarea>
 
       <h2>Map Drawing &amp; Editing Tools</h2>
-      <p class="hint">Pan/zoom the map, draw shapes, or click existing markers to edit labels and notes.</p>
+      <p class="hint">Pan/zoom the map, draw shapes, or click existing markers to edit labels and notes. Right-click a dock, entrance, or exit to remove it.</p>
       <p class="draw-status" id="drawStatus">Choose a tool or click existing markers to edit.</p>
 
       <div class="tools">
@@ -52,7 +64,6 @@
       <div class="form-actions">
         <button type="button" onclick="generateJSON()" class="btn-primary">Generate &amp; Download Location JSON</button>
         <button type="button" onclick="copyJSON()">Copy JSON to Clipboard</button>
-        <input type="file" id="loadFile" accept=".json" onchange="loadExistingJSON(event)">
       </div>
 
       <p class="hint">Save under Locations/&lt;Company&gt;/&lt;Name&gt;.json. masterlist.json is auto-generated from CI.</p>
@@ -79,8 +90,14 @@
       <div class="modal-actions">
         <button type="button" class="btn-primary" onclick="saveMarkerEdit()">Save</button>
         <button type="button" class="btn-secondary" onclick="closeMarkerEditModal()">Cancel</button>
+        <button type="button" class="btn-danger" onclick="deleteCurrentMarker()">Delete</button>
       </div>
     </div>
+  </div>
+
+  <div id="markerContextMenu" class="context-menu" hidden aria-hidden="true" role="menu" aria-label="Marker actions">
+    <button type="button" class="context-menu-item" data-action="edit" role="menuitem">Edit</button>
+    <button type="button" class="context-menu-item context-menu-item-danger" data-action="remove" role="menuitem">Remove</button>
   </div>
 
   <script src="../scripts/theme.js"></script>
