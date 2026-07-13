@@ -1,6 +1,15 @@
 {
   "locations": [
     {
+      "name": "Ryerson - Centralia",
+      "address": "3010 HARRISON AVE",
+      "city": "CENTRALIA",
+      "state": "WA",
+      "zip": "98531-9357",
+      "category": "Warehouse",
+      "filePath": "Locations/Ryerson/Ryerson__Centralia__WA.json"
+    },
+    {
       "name": "Tree Top Selah Plant",
       "address": "205 S Railroad Ave",
       "city": "Selah",
