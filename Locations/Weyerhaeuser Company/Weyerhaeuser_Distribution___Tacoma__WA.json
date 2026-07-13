@@ -99,24 +99,28 @@
     {
       "lat": 47.188210200728655,
       "lng": -122.48904353536875,
-      "label": "Truck Entrance"
+      "label": "Truck Entrance",
+      "notes": ""
     },
     {
       "lat": 47.18876961671765,
       "lng": -122.49015182218018,
-      "label": "Employee Entrance"
+      "label": "Employee Entrance",
+      "notes": ""
     }
   ],
   "truckExits": [
     {
       "lat": 47.18873498370964,
       "lng": -122.49015182218018,
-      "label": "Employee Exit"
+      "label": "Employee Exit",
+      "notes": ""
     },
     {
       "lat": 47.19023365262613,
       "lng": -122.48737091644438,
-      "label": "Truck Exit"
+      "label": "Truck Exit",
+      "notes": ""
     }
   ],
   "docks": [],

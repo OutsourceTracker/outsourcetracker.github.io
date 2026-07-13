@@ -39,7 +39,8 @@
     {
       "lat": 46.75188472799618,
       "lng": -123.0019821864098,
-      "label": "ENTRANCE"
+      "label": "ENTRANCE",
+      "notes": "Follow the entrance to the back to enter the yard."
     }
   ],
   "truckExits": [

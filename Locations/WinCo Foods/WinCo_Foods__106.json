@@ -71,14 +71,16 @@
     {
       "lat": 47.195935708186404,
       "lng": -122.45872442939454,
-      "label": "ENTRANCE"
+      "label": "ENTRANCE",
+      "notes": ""
     }
   ],
   "truckExits": [
     {
       "lat": 47.192019758941804,
       "lng": -122.45984427038704,
-      "label": "EXIT"
+      "label": "EXIT",
+      "notes": ""
     }
   ],
   "docks": [
