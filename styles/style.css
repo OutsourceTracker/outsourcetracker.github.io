@@ -167,11 +167,13 @@ select option {
 .map-container {
   flex: 1;
   position: relative;
+  background: var(--bg);
 }
 
 #map {
   height: 100%;
   width: 100%;
+  background: var(--bg);
 }
 
 #location-list {

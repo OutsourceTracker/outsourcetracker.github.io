@@ -68,17 +68,150 @@ function updateOverlayHitTargets(mode) {
   });
 }
 
-function initMap() {
-  map = new google.maps.Map(document.getElementById('map'), {
-    mapId: MAP_ID,
-    zoom: 16,
-    center: { lat: 47.25, lng: -122.45 },
-    mapTypeId: 'hybrid',
-    gestureHandling: 'greedy',
-    disableDoubleClickZoom: true,
-    mapTypeControl: false
+let appliedMapColorTheme = null;
+let mapTypeChangeListener = null;
+let reapplyingMapTheme = false;
+
+function getMapViewState() {
+  if (!map) {
+    return {
+      center: { lat: 47.25, lng: -122.45 },
+      zoom: 16,
+      mapTypeId: 'satellite'
+    };
+  }
+
+  const center = map.getCenter();
+  return {
+    center: center
+      ? {
+          lat: typeof center.lat === 'function' ? center.lat() : center.lat,
+          lng: typeof center.lng === 'function' ? center.lng() : center.lng
+        }
+      : { lat: 47.25, lng: -122.45 },
+    zoom: map.getZoom() ?? 16,
+    mapTypeId: map.getMapTypeId() || 'satellite'
+  };
+}
+
+function bindMapTypeThemeSync() {
+  if (!map) return;
+  if (mapTypeChangeListener) {
+    google.maps.event.removeListener(mapTypeChangeListener);
+    mapTypeChangeListener = null;
+  }
+
+  mapTypeChangeListener = map.addListener('maptypeid_changed', () => {
+    if (reapplyingMapTheme) return;
+    const mapTypeId = map.getMapTypeId();
+    if (
+      Theme.mapTypeUsesColorScheme(mapTypeId) &&
+      appliedMapColorTheme !== Theme.get()
+    ) {
+      reapplyMapTheme({ force: true });
+    }
   });
+}
+
+function snapshotMapOverlays() {
+  return {
+    boundary: getLatLngArray(boundaryPolygon),
+    navigationPath: getLatLngArray(navigationPath),
+    truckEntrances: entranceMarkers.map((marker) => ({
+      lat: getMarkerPosition(marker).lat,
+      lng: getMarkerPosition(marker).lng,
+      label: marker.__label || 'ENTRANCE',
+      notes: marker.__notes || ''
+    })),
+    truckExits: exitMarkers.map((marker) => ({
+      lat: getMarkerPosition(marker).lat,
+      lng: getMarkerPosition(marker).lng,
+      label: marker.__label || 'EXIT',
+      notes: marker.__notes || ''
+    })),
+    docks: dockMarkers.map((marker, index) => ({
+      lat: getMarkerPosition(marker).lat,
+      lng: getMarkerPosition(marker).lng,
+      name: marker.__label || `Dock ${index + 1}`,
+      notes: marker.__notes || ''
+    }))
+  };
+}
+
+function clearMapOverlays({ updateStatus = true } = {}) {
+  cancelDrawing();
+  hideMarkerContextMenu();
+  closeMarkerEditModal();
+
+  if (boundaryPolygon) {
+    boundaryPolygon.setMap(null);
+    boundaryPolygon = null;
+  }
+  if (navigationPath) {
+    navigationPath.setMap(null);
+    navigationPath = null;
+  }
+  allMarkers().forEach((marker) => {
+    marker.map = null;
+  });
+  entranceMarkers = [];
+  exitMarkers = [];
+  dockMarkers = [];
+
+  if (updateStatus) {
+    setStatus('Map cleared.');
+  }
+}
+
+async function initMap(viewState = null) {
+  if (mapDblClickListener) {
+    google.maps.event.removeListener(mapDblClickListener);
+    mapDblClickListener = null;
+  }
+  if (mapTypeChangeListener) {
+    google.maps.event.removeListener(mapTypeChangeListener);
+    mapTypeChangeListener = null;
+  }
+
+  const view = viewState || getMapViewState();
+  const themedOptions = await Theme.getMapOptions({
+    mapId: MAP_ID,
+    zoom: view.zoom,
+    center: view.center,
+    mapTypeId: view.mapTypeId || 'satellite',
+    gestureHandling: 'greedy',
+    disableDoubleClickZoom: true
+  });
+
+  map = new google.maps.Map(document.getElementById('map'), themedOptions);
+  appliedMapColorTheme = Theme.get();
   mapDblClickListener = map.addListener('dblclick', finishDrawing);
+  bindMapTypeThemeSync();
+}
+
+async function reapplyMapTheme({ force = false } = {}) {
+  if (!document.getElementById('map') || !window.google?.maps || !map) return;
+
+  const view = getMapViewState();
+  const needsColorScheme = Theme.mapTypeUsesColorScheme(view.mapTypeId);
+  if (!force && !needsColorScheme) return;
+  if (!force && appliedMapColorTheme === Theme.get()) return;
+
+  reapplyingMapTheme = true;
+  const snapshot = snapshotMapOverlays();
+  const previousStatus = document.getElementById('drawStatus')?.textContent;
+
+  try {
+    clearMapOverlays({ updateStatus: false });
+    await initMap(view);
+    restoreMapFromData(snapshot);
+
+    if (previousStatus) {
+      setStatus(previousStatus);
+    }
+  } finally {
+    reapplyingMapTheme = false;
+  }
 }
 
 function getMarkerPosition(marker) {
@@ -492,24 +625,7 @@ function scheduleAddressGeocode() {
 }
 
 function clearAll() {
-  cancelDrawing();
-  hideMarkerContextMenu();
-  closeMarkerEditModal();
-  if (boundaryPolygon) {
-    boundaryPolygon.setMap(null);
-    boundaryPolygon = null;
-  }
-  if (navigationPath) {
-    navigationPath.setMap(null);
-    navigationPath = null;
-  }
-  allMarkers().forEach((marker) => {
-    marker.map = null;
-  });
-  entranceMarkers = [];
-  exitMarkers = [];
-  dockMarkers = [];
-  setStatus('Map cleared.');
+  clearMapOverlays({ updateStatus: true });
 }
 
 function getLatLngArray(overlay) {
@@ -518,7 +634,7 @@ function getLatLngArray(overlay) {
 }
 
 function restoreMapFromData(data) {
-  clearAll();
+  clearMapOverlays({ updateStatus: false });
 
   if (data.boundary?.length > 2) {
     boundaryPolygon = new google.maps.Polygon({ ...POLYGON_OPTIONS, paths: data.boundary, map });
@@ -839,12 +955,15 @@ function wireEditorControls() {
 
 async function initEditor() {
   Theme.init();
+  Theme.onChange(() => {
+    reapplyMapTheme();
+  });
   wireEditorControls();
   const masterlistPromise = loadMasterList();
 
   const { AdvancedMarkerElement: MarkerClass } = await google.maps.importLibrary('marker');
   AdvancedMarkerElement = MarkerClass;
-  initMap();
+  await initMap();
   await masterlistPromise;
   setStatus(
     masterLocations.length

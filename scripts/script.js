@@ -46,16 +46,88 @@ async function loadLocationDetails(filePath) {
   }
 }
 
-function initMap() {
-  map = new google.maps.Map(document.getElementById('map'), {
-    mapId: MAP_ID,
-    zoom: 12,
-    center: { lat: 47.25, lng: -122.45 },
-    mapTypeId: 'hybrid',
-    gestureHandling: 'greedy',
-    fullscreenControl: true,
-    mapTypeControl: false
+let appliedMapColorTheme = null;
+let mapTypeChangeListener = null;
+let reapplyingMapTheme = false;
+
+function getMapViewState() {
+  if (!map) {
+    return {
+      center: { lat: 47.25, lng: -122.45 },
+      zoom: 12,
+      mapTypeId: 'satellite'
+    };
+  }
+
+  const center = map.getCenter();
+  return {
+    center: center
+      ? {
+          lat: typeof center.lat === 'function' ? center.lat() : center.lat,
+          lng: typeof center.lng === 'function' ? center.lng() : center.lng
+        }
+      : { lat: 47.25, lng: -122.45 },
+    zoom: map.getZoom() ?? 12,
+    mapTypeId: map.getMapTypeId() || 'satellite'
+  };
+}
+
+function bindMapTypeThemeSync() {
+  if (!map) return;
+  if (mapTypeChangeListener) {
+    google.maps.event.removeListener(mapTypeChangeListener);
+    mapTypeChangeListener = null;
+  }
+
+  mapTypeChangeListener = map.addListener('maptypeid_changed', () => {
+    if (reapplyingMapTheme) return;
+    const mapTypeId = map.getMapTypeId();
+    if (
+      Theme.mapTypeUsesColorScheme(mapTypeId) &&
+      appliedMapColorTheme !== Theme.get()
+    ) {
+      reapplyMapTheme({ force: true });
+    }
   });
+}
+
+async function initMap(viewState = null) {
+  const view = viewState || getMapViewState();
+  const themedOptions = await Theme.getMapOptions({
+    mapId: MAP_ID,
+    zoom: view.zoom,
+    center: view.center,
+    mapTypeId: view.mapTypeId || 'satellite',
+    gestureHandling: 'greedy',
+    fullscreenControl: true
+  });
+
+  map = new google.maps.Map(document.getElementById('map'), themedOptions);
+  appliedMapColorTheme = Theme.get();
+  bindMapTypeThemeSync();
+}
+
+async function reapplyMapTheme({ force = false } = {}) {
+  if (!document.getElementById('map') || !window.google?.maps || !map) return;
+
+  const view = getMapViewState();
+  const needsColorScheme = Theme.mapTypeUsesColorScheme(view.mapTypeId);
+  if (!force && !needsColorScheme) return;
+  if (!force && appliedMapColorTheme === Theme.get()) return;
+
+  reapplyingMapTheme = true;
+  const activeDetails = activeLocationPath ? loadedDetails.get(activeLocationPath) : null;
+
+  try {
+    clearMapGraphics();
+    await initMap(view);
+
+    if (activeDetails) {
+      showLocationOnMap(activeDetails);
+    }
+  } finally {
+    reapplyingMapTheme = false;
+  }
 }
 
 function isMobileDevice() {
@@ -686,7 +758,7 @@ async function initApp() {
   }
 
   if (!map) {
-    initMap();
+    await initMap();
   }
 
   await tryOpenPendingDeepLink();
@@ -694,6 +766,10 @@ async function initApp() {
 
 async function bootstrapApp() {
   Theme.init();
+  Theme.onChange(() => {
+    reapplyMapTheme();
+  });
+
   const loaded = await loadMasterListData();
   if (!loaded) return;
 

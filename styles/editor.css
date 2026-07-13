@@ -50,11 +50,13 @@ body.editor-page {
   position: relative;
   border-radius: 8px;
   overflow: hidden;
+  background: var(--bg);
 }
 
 #map {
   height: 100%;
   width: 100%;
+  background: var(--bg);
 }
 
 .tools {
