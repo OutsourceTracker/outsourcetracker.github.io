@@ -529,11 +529,23 @@ function restoreMapFromData(data) {
 
   data.truckEntrances?.forEach((pt) => {
     entranceMarkers.push(
-      createEditorMarker({ lat: pt.lat, lng: pt.lng }, pt.label || 'ENTRANCE', 'entrance')
+      createEditorMarker(
+        { lat: pt.lat, lng: pt.lng },
+        pt.label || 'ENTRANCE',
+        'entrance',
+        pt.notes || ''
+      )
     );
   });
   data.truckExits?.forEach((pt) => {
-    exitMarkers.push(createEditorMarker({ lat: pt.lat, lng: pt.lng }, pt.label || 'EXIT', 'exit'));
+    exitMarkers.push(
+      createEditorMarker(
+        { lat: pt.lat, lng: pt.lng },
+        pt.label || 'EXIT',
+        'exit',
+        pt.notes || ''
+      )
+    );
   });
   data.docks?.forEach((dock, i) => {
     dockMarkers.push(
@@ -567,12 +579,14 @@ function buildLocationData() {
     truckEntrances: entranceMarkers.map((m) => ({
       lat: getMarkerPosition(m).lat,
       lng: getMarkerPosition(m).lng,
-      label: m.__label || 'ENTRANCE'
+      label: m.__label || 'ENTRANCE',
+      notes: m.__notes || ''
     })),
     truckExits: exitMarkers.map((m) => ({
       lat: getMarkerPosition(m).lat,
       lng: getMarkerPosition(m).lng,
-      label: m.__label || 'EXIT'
+      label: m.__label || 'EXIT',
+      notes: m.__notes || ''
     })),
     docks: dockMarkers.map((m, i) => ({
       lat: getMarkerPosition(m).lat,

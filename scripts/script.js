@@ -617,10 +617,12 @@ function showLocationOnMap(loc) {
 
   const entranceMarkers = [];
   loc.truckEntrances?.forEach((pt) => {
-    entranceMarkers.push(addPointMarker(pt, pt.label || 'Entrance', 'entrance'));
+    entranceMarkers.push(
+      addPointMarker(pt, pt.label || 'Entrance', 'entrance', pt.notes || '')
+    );
   });
   loc.truckExits?.forEach((pt) => {
-    addPointMarker(pt, pt.label || 'Exit', 'exit');
+    addPointMarker(pt, pt.label || 'Exit', 'exit', pt.notes || '');
   });
   loc.docks?.forEach((dock) => {
     addPointMarker(
