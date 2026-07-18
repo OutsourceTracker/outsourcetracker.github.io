@@ -1,6 +1,15 @@
 {
   "locations": [
     {
+      "name": "J.B. Hunt Transport - Sumner Trailer Maintenance",
+      "address": "604 142nd AVE E",
+      "city": "SUMNER",
+      "state": "WA",
+      "zip": "98390",
+      "category": "Terminal",
+      "filePath": "Locations/JB Hunt Transport/J_B_Hunt_Transport_SURWA.json"
+    },
+    {
       "name": "Ryerson - Centralia",
       "address": "3010 HARRISON AVE",
       "city": "CENTRALIA",
